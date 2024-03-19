@@ -16,7 +16,6 @@
       "role": "Developer"
     }
   ],
-  "version": "0.9.0",
   "homepage": "https://gitlab.com/dompie/keila-php-api",
   "config": {
     "sort-packages": true,
