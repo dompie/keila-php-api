@@ -1,5 +1,5 @@
 {
-  "name": "dompie/keila-php-client",
+  "name": "dompie/keila-php-api",
   "type": "library",
   "description": "Keila newsletter API HTTP client",
   "keywords": [
