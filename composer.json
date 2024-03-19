@@ -1,0 +1,42 @@
+{
+  "name": "dompie/keila-php-client",
+  "type": "library",
+  "description": "Keila newsletter API HTTP client",
+  "keywords": [
+    "keila",
+    "newsletter",
+    "api-client"
+  ],
+  "license": "BSD-3-Clause-Clear",
+  "authors": [
+    {
+      "name": "Dominik Piekarski",
+      "email": "code@dompie.de",
+      "homepage": "https://dompie.de",
+      "role": "Developer"
+    }
+  ],
+  "version": "0.9.0",
+  "homepage": "https://gitlab.com/dompie/keila-php-api",
+  "config": {
+    "sort-packages": true,
+    "bin-dir": "bin"
+  },
+  "require": {
+    "php": "^8.1",
+    "guzzlehttp/guzzle": "7.*"
+  },
+  "autoload": {
+    "psr-4": {
+      "Dompie\\KeilaApiClient\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Dompie\\KeilaApiClient\\Tests\\": "tests/"
+    }
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5"
+  }
+}
