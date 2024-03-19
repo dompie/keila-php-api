@@ -1,11 +1,13 @@
+# Keila PHP API
+
 A PHP HTTP client for the Keila newsletter API with Guzzle as single dependency.
 
-Install:
+### Install
 ```
 composer require dompie/keila-http-api
 ```
 
-How to use:
+### How to use
 ```
 require_once 'vendor/autoload.php';
 
@@ -26,7 +28,7 @@ $responseInterface = $client->createCampaign($campaign);
 ```
 Then you can pass the Guzzle ResponseInterface to your context.
 
-
+### Response helper
 For testing purposes I've added also a KeilaResponse class to quickly access relevant items.
 ```
 $response = \Dompie\KeilaApiClient\KeilaResponse::new($responseInterface);
@@ -35,3 +37,21 @@ $response->getDataItem(0); //First element from the data property
 $response->getGuzzleResponse()->getStatusCode()
 ```
 
+
+### &#9888;&#65039; Tests will trigger E-Mail sending. Use only with keila dev instance.
+```
+cp phpunit.xml.dist phpunit.xml
+```
+
+Put your Keila URI and Keila api key into phpunit.xml:
+```
+<env name="KEILA_BASE_URI" value="http://keila.local:4000" force="true"/>
+<env name="KEILA_API_KEY" value="secret-api-key" force="true"/>
+```
+
+#### Finally tests
+```
+make test
+or
+XDEBUG_MODE=coverage make test-coverage
+```
