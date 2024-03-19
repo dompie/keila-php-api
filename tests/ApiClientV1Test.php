@@ -283,12 +283,17 @@ class ApiClientV1Test extends KeilaTestCase
 
     public function testCampaignScheduleFor(): void
     {
+        $this->deleteContacts();
+        $this->client->contactCreate($this->email1, 'First', 'Last');
+        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Schedule-Test .' . date('His'), ['$in' => [$this->email1]]));
+
         $name = 'Send campaign test ' . date('dmY-His');
         $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
         $c = (new Campaign())
             ->withTextBody('Hello world!')
             ->withName($name)
             ->withSenderId($senderIndexResponse->getDataItem(0)['id'])
+            ->withSegmentId($segment->data->id)
             ->withTextEditor();
         $response = $this->response2Object($this->client->campaignCreate($c));
         self::assertNull($response->data->scheduled_for);
@@ -310,12 +315,17 @@ class ApiClientV1Test extends KeilaTestCase
 
     public function testCampaignSend(): void
     {
+        $this->deleteContacts();
+        $this->client->contactCreate($this->email1, 'First', 'Last');
+        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Send-Test .' . date('His'), ['$in' => [$this->email1]]));
+
         $name = 'Send campaign test ' . date('dmY-His');
         $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
         $c = (new Campaign())
             ->withTextBody('Hello world!')
             ->withName($name)
             ->withSenderId($senderIndexResponse->getDataItem(0)['id'])
+            ->withSegmentId($segment->data->id)
             ->withTextEditor();
         $response = $this->response2Object($this->client->campaignCreate($c));
         self::assertNull($response->data->sent_at);
