@@ -16,7 +16,7 @@
       "role": "Developer"
     }
   ],
-  "homepage": "https://gitlab.com/dompie/keila-php-api",
+  "homepage": "https://github.com/dompie/keila-php-api",
   "config": {
     "sort-packages": true,
     "bin-dir": "bin"
