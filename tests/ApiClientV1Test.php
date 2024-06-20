@@ -13,6 +13,7 @@ use Dompie\KeilaApiClient\KeilaResponse;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\Attributes\UsesClass;
 use Psr\Http\Message\ResponseInterface;
@@ -41,6 +42,7 @@ class ApiClientV1Test extends KeilaTestCase
         if (!empty($_ENV['KEILA_API_KEY'])) {
             self::$apiKey = $_ENV['KEILA_API_KEY'];
         }
+
         $httpClient = new Client();
         $this->client = new ApiClientV1($httpClient, self::$baseUri, self::$apiKey);
         $this->email1 = 'first.example@' . $this->testTld1;
@@ -173,7 +175,7 @@ class ApiClientV1Test extends KeilaTestCase
         $initialName = 'TestSegmentName1';
         $initialCount = $this->response2Object($this->client->segmentIndex())->meta->count;
         //Test create
-        $segmentId = $this->response2Object($this->client->segmentCreate($initialName, ['email' => ['$in' => $this->email1]]))->data->id;
+        $segmentId = $this->response2Object($this->client->segmentCreate($initialName, ['email' => $this->email1]))->data->id;
         $segments = $this->response2Object($this->client->segmentIndex());
         self::assertSame(($initialCount + 1), $segments->meta->count);
 
@@ -209,16 +211,14 @@ class ApiClientV1Test extends KeilaTestCase
     }
 
     #[Depends('testCampaignIndex')]
-    public function testCampaignCreate(): string
+    #[DataProvider('campaignDataProvider')]
+    public function testCampaignCreate(Campaign $c): string
     {
         $senderIndexResponse = $this->response2Object($this->client->senderIndex());
         self::assertGreaterThanOrEqual(1, count($senderIndexResponse->data));
         $campaignIndexCount1 = count($this->response2Object($this->client->campaignIndex())->data);
 
-        $c = (new Campaign())
-            ->withName('Test api campaign ' . uniqid('', false))
-            ->withSenderId($senderIndexResponse->data[0]->id)
-            ->withTextEditor();
+        $c->withSenderId($senderIndexResponse->data[0]->id);
 
         $response = $this->client->campaignCreate($c);
         self::assertKeilaResponseSuccessfull($response);
@@ -227,6 +227,21 @@ class ApiClientV1Test extends KeilaTestCase
         self::assertGreaterThan($campaignIndexCount1, $campaignIndexCount2);
 
         return $campaignId;
+    }
+
+    public static function campaignDataProvider(): array
+    {
+        $id = uniqid('', false);
+        return [
+            'text-campaign' => [(new Campaign())
+                ->withName('Test text campaign create' . $id)
+                ->withTextEditor('Test text')
+            ],
+            'block-campaign' => [(new Campaign())
+                ->withName('Test block campaign create' . $id)
+                ->withBlockEditor('{"blocks":[{"data":{"text":"Test block"},"id":"ioRfMFgibP","type":"paragraph"}],"time":1717071042004,"version":"2.26.5"}')
+            ]
+        ];
     }
 
     #[Depends('testCampaignCreate')]
@@ -255,17 +270,17 @@ class ApiClientV1Test extends KeilaTestCase
         $c = (new Campaign())
             ->withName($campaignName)
             ->withSenderId($senderIndexResponse->getDataItem(0)['id'])
-            ->withTextEditor();
+            ->withTextEditor('Updated content text');
 
         $campaign = $this->response2Object($this->client->campaignCreate($c));
         self::assertSame($campaignName, $campaign->data->subject);
         $newCampaignName = 'Test api campaign ' . sprintf('%04d', random_int(1, 9999));
-        $c = (new Campaign())->withName($newCampaignName)->withMarkdownEditor();
+        $c = (new Campaign())->withName($newCampaignName)->withMarkdownEditor('Updated content markdown');
         $updatedCampaign = $this->response2Object($this->client->campaignPatch($c, $campaign->data->id));
         self::assertSame($newCampaignName, $updatedCampaign->data->subject, sprintf('Campaign name should be "%s" but is "%s"', $newCampaignName, $updatedCampaign->subject));
 
         $newCampaignName = 'Test api campaign ' . '(PUT test)';
-        $c = (new Campaign())->withName($newCampaignName)->withTextEditor();
+        $c = (new Campaign())->withName($newCampaignName)->withTextEditor('Updated content text');
         $updatedCampaign = $this->response2Object($this->client->campaignPut($c, $campaign->data->id));
         self::assertSame($newCampaignName, $updatedCampaign->data->subject, sprintf('Campaign name should be "%s" but is "%s"', $newCampaignName, $updatedCampaign->subject));
     }
@@ -285,16 +300,15 @@ class ApiClientV1Test extends KeilaTestCase
     {
         $this->deleteContacts();
         $this->client->contactCreate($this->email1, 'First', 'Last');
-        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Schedule-Test .' . date('His'), ['$in' => [$this->email1]]));
+        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Schedule-Test .' . date('His'), ['email' => $this->email1]));
 
         $name = 'Send campaign test ' . date('dmY-His');
         $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
         $c = (new Campaign())
-            ->withTextBody('Hello world!')
             ->withName($name)
             ->withSenderId($senderIndexResponse->getDataItem(0)['id'])
             ->withSegmentId($segment->data->id)
-            ->withTextEditor();
+            ->withTextEditor('Hello world!');
         $response = $this->response2Object($this->client->campaignCreate($c));
         self::assertNull($response->data->scheduled_for);
         self::assertNull($response->data->sent_at);
@@ -313,20 +327,39 @@ class ApiClientV1Test extends KeilaTestCase
         self::assertNull($response->data->sent_at);
     }
 
-    public function testCampaignSend(): void
+    public function testBlockCampaignSave(): void
     {
         $this->deleteContacts();
         $this->client->contactCreate($this->email1, 'First', 'Last');
-        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Send-Test .' . date('His'), ['$in' => [$this->email1]]));
+        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Send-Test ' . date('His'), ['email' => $this->email1]));
 
         $name = 'Send campaign test ' . date('dmY-His');
         $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
         $c = (new Campaign())
-            ->withTextBody('Hello world!')
             ->withName($name)
             ->withSenderId($senderIndexResponse->getDataItem(0)['id'])
             ->withSegmentId($segment->data->id)
-            ->withTextEditor();
+            ->withBlockEditor(json_decode('{"blocks":[{"data":{"text":"Mein Test Text.<br>"},"type":"paragraph"}],"time":' . time() . '100' . ',"version":"2.26.5"}', true));
+        //Test both ways of setting block editor content.
+        $c->withBlockEditor('{"blocks":[{"data":{"text":"Mein Test Text.<br>"},"type":"paragraph"}],"time":' . time() . '100' . ',"version":"2.26.5"}');
+
+        $response = $this->response2Object($this->client->campaignCreate($c));
+        self::assertNull($response->data->sent_at);
+    }
+
+    public function testCampaignSend(): void
+    {
+        $this->deleteContacts();
+        $this->client->contactCreate($this->email1, 'First', 'Last');
+        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Send-Test ' . date('His'), ['email' => $this->email1]));
+        $name = 'Send campaign test ' . date('dmY-His');
+        $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
+        $c = (new Campaign())
+            ->withName($name)
+            ->withSenderId($senderIndexResponse->getDataItem(0)['id'])
+            ->withSegmentId($segment->data->id)
+
+            ->withTextEditor('Hello world!');
         $response = $this->response2Object($this->client->campaignCreate($c));
         self::assertNull($response->data->sent_at);
 
@@ -336,7 +369,7 @@ class ApiClientV1Test extends KeilaTestCase
 
     private function response2Object(ResponseInterface $response): \stdClass
     {
-        return json_decode($response->getBody()->getContents(), false, 8, JSON_THROW_ON_ERROR);
+        return json_decode($response->getBody()->getContents(), false, 32, JSON_THROW_ON_ERROR);
     }
 
     private function deleteContacts(): void

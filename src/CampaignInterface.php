@@ -8,7 +8,7 @@ namespace Dompie\KeilaApiClient;
 
 interface CampaignInterface
 {
-    public function withTextEditor(): self;
+    public function withTextEditor(string $textBody): self;
 
     public function toArray(): array;
 }

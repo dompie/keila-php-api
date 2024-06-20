@@ -21,7 +21,7 @@ $responseInterface = $client->createContact([
 
 $campaign = new \Dompie\KeilaApiClient\Campaign();
 $campaign->withName('My test campaign')
-    ->withTextBody('Hello world!')
+    ->withTextEditor('Hello world!')
     ->withMarkdownEditor();
     
 $responseInterface = $client->createCampaign($campaign);

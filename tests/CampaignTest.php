@@ -30,11 +30,11 @@ class CampaignTest extends KeilaTestCase
 
     public function testEditorType(): void
     {
-        $editor = (new Campaign())->withBlockEditor()->toArray()['settings']['type'];
+        $editor = (new Campaign())->withBlockEditor(['Block content'])->toArray()['settings']['type'];
         self::assertSame('block', $editor);
-        $editor = (new Campaign())->withTextEditor()->toArray()['settings']['type'];
+        $editor = (new Campaign())->withTextEditor('Text content')->toArray()['settings']['type'];
         self::assertSame('text', $editor);
-        $editor = (new Campaign())->withMarkdownEditor()->toArray()['settings']['type'];
+        $editor = (new Campaign())->withMarkdownEditor('Markdown content')->toArray()['settings']['type'];
         self::assertSame('markdown', $editor);
     }
 
@@ -43,17 +43,16 @@ class CampaignTest extends KeilaTestCase
         $c = (new Campaign())
             ->withSenderId('senderId')
             ->withName('CampaignName')
-            ->withBlockEditor()
+            ->withTextEditor('text body')
             ->withCustomData(['key' => 'value'])
             ->withoutTracking()
             ->withPreviewText('preview text')
             ->withSegmentId('segmentId')
             ->withTemplateId('templateId')
-            ->withTextBody('text body')
             ->withWysiwyg();
 
         $data = $c->toArray();
-        self::assertSame('block', $data['settings']['type']);
+        self::assertSame('text', $data['settings']['type']);
         self::assertSame(json_encode(['key' => 'value'], JSON_THROW_ON_ERROR), $data['data']);
         self::assertSame(true, $data['settings']['do_not_track']);
         self::assertSame('preview text', $data['preview_text']);

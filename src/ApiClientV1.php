@@ -27,6 +27,31 @@ class ApiClientV1
         return KeilaRequest::class . '::new';
     }
 
+    /**
+     * Filters supported: https://github.com/pentacent/keila/blob/main/lib/keila/contacts/query.ex
+     *   ### Supported operators:
+     *    - `"$not"` - logical not.
+     *    `%{"$not" => {%"email" => "foo@bar.com"}}`
+     *    - `"$or"` - logical or.
+     *    `%{"$or" => [%{"email" => "foo@bar.com"}, %{"inserted_in" => "2020-01-01 00:00:00Z"}]}`
+     *    - `"$gt"` - greater-than operator.
+     *    `%{"inserted_at" => %{"$gt" => "2020-01-01 00:00:00Z"}}`
+     *    - `"$gte"` - greater-than-equal operator.
+     *    - `"$lt"` - lesser-than operator.
+     *    `%{"inserted_at" => %{"$lt" => "2020-01-01 00:00:00Z"}}`
+     *    - `"$lte"` - lesser-than-or-equal operator.
+     *    - `"$in"` - queries if field value is part of a set.
+     *    `%{"email" => %{"$in" => ["foo@example.com", "bar@example.com"]}}`
+     *    - `"$like"` - queries if the field matches using the SQL `LIKE` statement.
+     *    `%{"email" => %{"$like" => "%keila.io"}}`
+     *
+     * @param array $filters
+     * @param int $page
+     * @param int $pageSize
+     * @param array $order
+     * @return ResponseInterface
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     public function contactIndex(array $filters = [], int $page = 0, int $pageSize = 50, array $order = []): ResponseInterface
     {
         $request = $this->buildKeilaRequest()
@@ -56,7 +81,7 @@ class ApiClientV1
 
     public function contactGetByEmail(string $email): ResponseInterface
     {
-        return $this->contactIndex(['email' => ['$in' => [$email]]]);
+        return $this->contactIndex(['email' => $email]);
     }
 
     public function contactGetByEmails(array $emails): ResponseInterface

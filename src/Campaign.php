@@ -59,30 +59,40 @@ class Campaign implements CampaignInterface
         return $this;
     }
 
-    public function withTextBody(string $textBody): self
+    public function withTextEditor(string $textBody): self
     {
+        $this->data['settings']['type'] = 'text';
+        $this->wipeContentBody();
         $this->data['text_body'] = $textBody;
 
         return $this;
     }
 
-    public function withTextEditor(): self
-    {
-        $this->data['settings']['type'] = 'text';
-
-        return $this;
-    }
-
-    public function withMarkdownEditor(): self
+    public function withMarkdownEditor(string $markdownBody): self
     {
         $this->data['settings']['type'] = 'markdown';
+        $this->wipeContentBody();
+        $this->data['text_body'] = $markdownBody;
 
         return $this;
     }
 
-    public function withBlockEditor(): self
+    /**
+     * @throws \JsonException
+     */
+    public function withBlockEditor(string|array $jsonBody): self
     {
         $this->data['settings']['type'] = 'block';
+        $this->wipeContentBody();
+        $this->data['json_body'] = is_array($jsonBody) ? $jsonBody : json_decode($jsonBody, true, 512, JSON_THROW_ON_ERROR);
+
+
+        return $this;
+    }
+
+    private function wipeContentBody(): self
+    {
+        unset($this->data['json_body'], $this->data['text_body'], $this->data['html_body']);
 
         return $this;
     }
