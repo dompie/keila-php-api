@@ -24,6 +24,7 @@ class Campaign implements CampaignInterface
      * @var array
      */
     protected array $data = [];
+    protected ?string $id = null;
 
     public function __construct()
     {
@@ -142,5 +143,16 @@ class Campaign implements CampaignInterface
     public function toArray(): array
     {
         return $this->data;
+    }
+
+    public function setId(string $campaignId): self
+    {
+        $this->id = $campaignId;
+        return $this;
+    }
+
+    public function getId(): ?string
+    {
+        return $this->id;
     }
 }
