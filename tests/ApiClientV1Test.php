@@ -33,6 +33,8 @@ class ApiClientV1Test extends KeilaTestCase
 
     private static string $baseUri = '';
     private static string $apiKey;
+    private array $segmentFilter1 = [];
+    private array $segmentFilter2 = [];
 
     public function setUp(): void
     {
@@ -47,6 +49,18 @@ class ApiClientV1Test extends KeilaTestCase
         $this->client = new ApiClientV1($httpClient, self::$baseUri, self::$apiKey);
         $this->email1 = 'first.example@' . $this->testTld1;
         $this->email2 = 'first.test@' . $this->testTld2;
+
+        $this->segmentFilter1 = ['$or' =>
+            [['$and' => [[
+                'email' => $this->email1
+            ]]]]
+        ];
+
+        $this->segmentFilter2 = ['$or' =>
+            [['$and' => [[
+                'email' => $this->email2
+            ]]]]
+        ];
     }
 
     public function testContactCreate(): string
@@ -300,7 +314,7 @@ class ApiClientV1Test extends KeilaTestCase
     {
         $this->deleteContacts();
         $this->client->contactCreate($this->email1, 'First', 'Last');
-        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Schedule-Test .' . date('His'), ['email' => $this->email1]));
+        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Schedule-Test .' . date('His'), $this->segmentFilter1));
 
         $name = 'Send campaign test ' . date('dmY-His');
         $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
@@ -331,7 +345,7 @@ class ApiClientV1Test extends KeilaTestCase
     {
         $this->deleteContacts();
         $this->client->contactCreate($this->email1, 'First', 'Last');
-        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Send-Test ' . date('His'), ['email' => $this->email1]));
+        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Send-Test ' . date('His'), $this->segmentFilter1));
 
         $name = 'Send campaign test ' . date('dmY-His');
         $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
@@ -351,15 +365,15 @@ class ApiClientV1Test extends KeilaTestCase
     {
         $this->deleteContacts();
         $this->client->contactCreate($this->email1, 'First', 'Last');
-        $segment = $this->response2Object($this->client->segmentCreate('Campaign-Send-Test ' . date('His'), ['email' => $this->email1]));
-        $name = 'Send campaign test ' . date('dmY-His');
-        $senderIndexResponse = KeilaResponse::new($this->client->senderIndex());
+        $segment = $this->response2Object($this->client->segmentCreate('Segment-Send-Test ' . date('His'), $this->segmentFilter1));
+        $name = 'Campaign send test ' . date('His');
+        $senderId = KeilaResponse::new($this->client->senderIndex())->getDataItem(0)['id'];
         $c = (new Campaign())
             ->withName($name)
-            ->withSenderId($senderIndexResponse->getDataItem(0)['id'])
+            ->withSenderId($senderId)
             ->withSegmentId($segment->data->id)
-
             ->withTextEditor('Hello world!');
+
         $response = $this->response2Object($this->client->campaignCreate($c));
         self::assertNull($response->data->sent_at);
 
