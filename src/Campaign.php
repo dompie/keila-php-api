@@ -135,7 +135,7 @@ class Campaign implements CampaignInterface
 
     public function withCustomData(array $data): self
     {
-        $this->data['data'] = json_encode($data, JSON_THROW_ON_ERROR);
+        $this->data['data'] = $data;
 
         return $this;
     }
